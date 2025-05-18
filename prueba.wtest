@@ -1,0 +1,180 @@
+import universidad.*
+
+describe "Test para probar cada punto del trabajo" {
+    // 1 - Registrar una materia aprobada por un estudiante indicando la nota obtenida.
+  test"Registrar materia aprobada"{
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const rocio = new Estudiante(nombre = "Juan", carreras = #{programacion})
+    rocio.aprobarMateria(objetos1, 7)
+    assert.equals(1, rocio.cantidadMateriasAprobadas())
+    assert.that(rocio.tieneAprobada(objetos1))
+  }
+
+  // 2 - Saber de un estudiante la cantidad de materias aprobadas, el promedio y si tiene o no aprobada una materia
+  test "Calcular el promedio, las materias aprobadas y si aprobo bases de datos"{
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const basesDeDatos = new Materia(nombre = "Bases de Datos", carrera = programacion, cupo = 10)
+  
+    const ana = new Estudiante(nombre = "Ana", carreras = #{programacion})
+    programacion.agregarMateria(objetos1)
+    programacion.agregarMateria(basesDeDatos)
+    ana.aprobarMateria(objetos1, 7)
+    ana.aprobarMateria(basesDeDatos, 7)
+
+    assert.equals(2, ana.cantidadMateriasAprobadas())
+    assert.that(ana.tieneAprobada(basesDeDatos))
+    assert.equals(7, ana.promedio())
+  
+  }
+  // 3 - Modificar el registro de aprobación de materia, lanzando error si ya está aprobada
+  test "No se puede registrar una aprobación si la materia ya está aprobada" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const carolina = new Estudiante(nombre = "Carolina", carreras = #{programacion})
+    carolina.aprobarMateria(objetos1, 7) 
+
+    assert.throwsExceptionWithMessage("No se puede aprobar la materia", {
+    carolina.aprobarMateria(objetos1, 8)
+    })
+  }
+
+  // 4 - Saber la colección de materias de todas las carreras a las que está inscripto
+  test "Se obtienen todas las materias de las carreras que cursa un estudiante" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const medicina = new Carrera(nombre = "Medicina")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const matematica1 = new Materia(nombre = "Matematica 1", carrera = programacion, cupo = 10)
+    const biologia1 = new Materia(nombre = "Biologia 1", carrera = medicina, cupo = 10)
+    const quimica = new Materia(nombre = "Quimica", carrera = medicina, cupo = 10)
+    programacion.agregarMateria(objetos1)
+    programacion.agregarMateria(matematica1)
+    medicina.agregarMateria(biologia1)
+    medicina.agregarMateria(quimica)
+    const roque = new Estudiante(nombre = "Roque", carreras = #{programacion, medicina})
+    roque.inscribirACarrera(programacion)
+    roque.inscribirACarrera(medicina)
+
+    const materiasDeRoque = roque.colectionDeMaterias()
+    assert.equals(4, materiasDeRoque.size())
+    assert.that(materiasDeRoque.contains(objetos1))
+    assert.that(materiasDeRoque.contains(matematica1))
+    assert.that(materiasDeRoque.contains(biologia1))
+    assert.that(materiasDeRoque.contains(quimica))
+  }
+
+  // 5 - Determinar si un estudiante puede inscribirse a una materia
+  test "Se determina correctamente si un estudiante puede inscribirse a una materia" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const matematica1 = new Materia(nombre = "Matematica 1", carrera = programacion, cupo = 10)
+    const objetos2 = new Materia(nombre = "Objetos 2", carrera = programacion, cupo = 3, requisitos = #{objetos1, matematica1})
+    const estudiante = new Estudiante(nombre = "Luisa", carreras = #{programacion})
+    estudiante.aprobarMateria(objetos1, 7)
+    estudiante.aprobarMateria(matematica1, 8)
+    programacion.agregarMateria(objetos2)
+
+     assert.that(estudiante.condicionesParaIncribirse(objetos2)) 
+     const otraMateria = new Materia(nombre = "Otra", carrera = new Carrera(nombre = "OtraCarrera"), cupo = 10)
+     assert.notThat(estudiante.condicionesParaIncribirse(otraMateria))
+  }
+
+  // 6 - Inscribir un estudiante a una materia, verificando condiciones y cupo
+  test "Se inscribe un estudiante a una materia, considerando cupo y lista de espera" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 2)
+    const carlos = new Estudiante(nombre = "Carlos", carreras = #{programacion})
+    const sofia = new Estudiante(nombre = "Sofia", carreras = #{programacion})
+    const pedro = new Estudiante(nombre = "Pedro", carreras = #{programacion})
+    
+    programacion.agregarMateria(objetos1)
+    carlos.inscribirAMateria(objetos1)
+    sofia.inscribirAMateria(objetos1)
+    pedro.inscribirAMateria(objetos1)
+   
+
+    assert.equals(2, objetos1.estudiantesInscriptos().size())
+    assert.equals(1, objetos1.estudiantesEnListaDeEspera().size())
+    assert.that(objetos1.estudiantesInscriptos().contains(carlos))
+    assert.that(objetos1.estudiantesInscriptos().contains(sofia))
+    assert.that(objetos1.estudiantesEnListaDeEspera().contains(pedro))
+  }
+
+  // 7 - Dar de baja a un estudiante de una materia
+  test "Al dar de baja a un estudiante, se reasigna el cupo si hay lista de espera" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 1)
+    const daniel = new Estudiante(nombre = "Daniel", carreras = #{programacion})
+    const valentina = new Estudiante(nombre = "Valentina", carreras = #{programacion})
+    programacion.agregarMateria(objetos1)
+
+    daniel.inscribirAMateria(objetos1)
+    valentina.inscribirAMateria(objetos1) // Valentina queda en lista de espera
+
+    objetos1.darDeBaja(daniel) // Daniel se da de baja
+
+    assert.equals(1, objetos1.inscriptos().size())
+    assert.equals(0, objetos1.listaDeEspera().size())
+    assert.that(objetos1.inscriptos().contains(valentina)) // Valentina toma el lugar
+  }
+
+  // 8 - Brindar resultados de inscripción (estudiantes inscriptos y en lista de espera)
+  test "Se obtienen correctamente los estudiantes inscriptos y en lista de espera" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 2)
+    const federico = new Estudiante(nombre = "Federico", carreras = #{programacion})
+    const gabriela = new Estudiante(nombre = "Gabriela", carreras = #{programacion})
+    const hernan = new Estudiante(nombre = "Hernan", carreras = #{programacion})
+    programacion.agregarMateria(objetos1)
+    federico.inscribirAMateria(objetos1)
+    gabriela.inscribirAMateria(objetos1)
+    hernan.inscribirAMateria(objetos1)
+
+    assert.equals(#{federico, gabriela}, objetos1.estudiantesInscriptos())
+    assert.equals([hernan], objetos1.estudiantesEnListaDeEspera())
+  }
+
+  // 9 - Brindar información útil para un estudiante (materias inscriptas y en lista de espera)
+  test "Se obtienen las materias en las que un estudiante está inscripto y en lista de espera" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 1)
+    const matematica1 = new Materia(nombre = "Matematica 1", carrera = programacion, cupo = 10)
+    const ignacio = new Estudiante(nombre = "Ignacio", carreras = #{programacion})
+    const martina = new Estudiante(nombre = "Martina", carreras = #{programacion})
+    programacion.agregarMateria(objetos1)
+    programacion.agregarMateria(matematica1)
+    ignacio.inscribirAMateria(objetos1)
+    martina.inscribirAMateria(objetos1)
+    ignacio.inscribirAMateria(matematica1) 
+
+    assert.equals(#{objetos1}, martina.materiasEnListaDeEspera())
+    assert.equals(#{matematica1, objetos1}, ignacio.materiasEnLasQueEstoyIncripto())
+  }
+
+  // 10 - Dada una carrera, conocer todas las materias a las que se puede inscribir
+  test "Se obtienen las materias a las que un estudiante se puede inscribir en una carrera" {
+    const programacion = new Carrera(nombre = "Programacion")
+    const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10)
+    const matematica1 = new Materia(nombre = "Matematica 1", carrera = programacion, cupo = 10)
+    const objetos2 = new Materia(nombre = "Objetos 2", carrera = programacion, cupo = 10, requisitos = #{objetos1, matematica1})
+    const basesDeDatos = new Materia(nombre = "Bases de Datos", carrera = programacion, cupo = 10, requisitos = #{})
+
+    programacion.agregarMateria(objetos1)
+    programacion.agregarMateria(matematica1)
+    programacion.agregarMateria(objetos2)
+    programacion.agregarMateria(basesDeDatos)
+
+    const juana = new Estudiante(nombre = "Juana", carreras = #{programacion})
+    juana.aprobarMateria(objetos1, 7)
+    juana.aprobarMateria(matematica1, 8)
+
+    const materiasInscribibles = juana.materiasALasQueMePuedoInscribirEn(programacion)
+
+    assert.equals(2, materiasInscribibles.size())
+    assert.that(materiasInscribibles.contains(objetos2))
+    assert.that(materiasInscribibles.contains(basesDeDatos))
+    assert.notThat(materiasInscribibles.contains(objetos1))
+    assert.notThat(materiasInscribibles.contains(matematica1))
+  }
+}

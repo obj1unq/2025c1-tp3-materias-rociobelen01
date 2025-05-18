@@ -1,0 +1,98 @@
+import universidad.*
+describe "Test de Universidad"{
+   // Carreras 
+   const medicina = new Carrera(nombre = "Medicina")
+   const programacion = new Carrera(nombre = "Programacion")
+   // Materias de Programacion
+   const objetos1 = new Materia(nombre = "Objetos 1", carrera = programacion, cupo = 10, requisitos = #{})
+   const matematica1 = new Materia(nombre = "Matematica 1", carrera = programacion, cupo = 10, requisitos = #{})
+   const objetos2 = new Materia(nombre = "Objetos 2", carrera = programacion, cupo = 3, requisitos = #{objetos1, matematica1})
+   const basesDeDatos = new Materia(nombre = "Bases de Datos", carrera = programacion, cupo = 10, requisitos = #{})
+   const objetos3 = new Materia(nombre = "Objetos 3", carrera = programacion, cupo = 10, requisitos = #{objetos2, basesDeDatos})
+   const programacionConcurrente = new Materia(nombre = "Programacion Concurrente", carrera = programacion, cupo = 10, requisitos = #{objetos1, basesDeDatos})
+   const elementosDeProgramacion = new Materia(nombre = "Elementos de Programacion", carrera = programacion, cupo = 10, requisitos = #{})
+   // Materias de Medicina
+   const biologia1 = new Materia(nombre = "Biologia 1", carrera = medicina, cupo = 10, requisitos = #{})
+   const biologia2 = new Materia(nombre = "Biologia 2", carrera = medicina, cupo = 10, requisitos = #{biologia1})
+   const quimica = new Materia(nombre = "Quimica", carrera = medicina, cupo = 10, requisitos = #{})
+   // Estudiantes 
+   const roque = new Estudiante (nombre = "Roque", carreras = #{programacion, medicina})
+   const luisa  = new Estudiante (nombre = "Luisa", carreras = #{programacion})
+   const romina = new Estudiante (nombre = "Romina", carreras = #{programacion})
+   const alicia = new Estudiante (nombre = "Alicia", carreras = #{programacion})
+   const ana    = new Estudiante (nombre = "Ana", carreras = #{programacion})
+
+   method initialize() {
+    programacion.agregarMateria(objetos1)
+    programacion.agregarMateria(matematica1)
+    programacion.agregarMateria(objetos2)
+    programacion.agregarMateria(basesDeDatos)
+    programacion.agregarMateria(objetos3)
+    programacion.agregarMateria(programacionConcurrente)
+    programacion.agregarMateria(elementosDeProgramacion) 
+
+    medicina.agregarMateria(biologia1)
+    medicina.agregarMateria(biologia2)
+    medicina.agregarMateria(quimica)
+
+    roque.aprobarMateria(elementosDeProgramacion, 7)
+    roque.aprobarMateria(matematica1, 6)
+    roque.aprobarMateria(objetos1, 8)
+    roque.aprobarMateria(basesDeDatos, 5)
+    roque.aprobarMateria(quimica, 10)
+    roque.aprobarMateria(biologia1, 6)
+
+    luisa.aprobarMateria(elementosDeProgramacion, 5)
+    luisa.aprobarMateria(objetos1,6)
+    luisa.aprobarMateria(matematica1, 7)
+    romina.aprobarMateria(elementosDeProgramacion,4)
+    romina.aprobarMateria(objetos1,9)
+    romina.aprobarMateria(matematica1,8)
+    alicia.aprobarMateria(elementosDeProgramacion,10)
+    alicia.aprobarMateria(objetos1,9)
+    alicia.aprobarMateria(matematica1,6)
+    ana.aprobarMateria(elementosDeProgramacion, 10)
+   }
+   
+  test "Roque puede inscribirse en Objetos 2, pero no en Objetos 3 (porque le falta Objetos 2) ni en Objetos 1 (porque ya la tiene aprobada)."{
+  roque.inscribirAMateria(objetos2)
+    assert.equals(#{objetos2}, roque.materiasEnLasQueEstoyIncripto())
+    assert.throwsException({ roque.inscribirAMateria(objetos3) })
+    assert.throwsException({ roque.inscribirAMateria(objetos1)  })
+  }
+
+  test "Roque puede inscribirse: en Programación, en Objetos 2 y Programación Concurrente; en Medicina, en Biología 2."{
+    roque.inscribirAMateria(objetos2)
+    roque.inscribirAMateria(programacionConcurrente)
+    roque.inscribirAMateria(biologia2)
+
+    assert.that(roque.materiasEnLasQueEstoyIncripto().contains(programacionConcurrente))
+    assert.equals(#{objetos2, programacionConcurrente, biologia2}, roque.materiasEnLasQueEstoyIncripto())
+    assert.equals(3, roque.materiasEnLasQueEstoyIncripto().size())
+  }
+
+  test"Si se inscriben, en este orden, Luisa, Romina, Alicia y Roque en Objetos 2, entonces las tres primeras quedan confirmadas, y Roque queda en lista de espera."{
+    luisa.inscribirAMateria(objetos2)
+    romina.inscribirAMateria(objetos2)
+    alicia.inscribirAMateria(objetos2)
+    roque.inscribirAMateria(objetos2)
+
+    assert.equals(#{luisa,romina,alicia}, objetos2.estudiantesInscriptos())
+    assert.equals([roque], objetos2.estudiantesEnListaDeEspera())
+    assert.that(alicia.estaInscripto(objetos2))
+    assert.notThat(roque.estaInscripto(objetos2))
+  }
+  
+  test"Si después se da de baja Romina en Objetos 2, entonces Roque pasa a tener la inscripción confirmada en esa materia."{
+    luisa.inscribirAMateria(objetos2)
+    romina.inscribirAMateria(objetos2)
+    alicia.inscribirAMateria(objetos2)
+    roque.inscribirAMateria(objetos2)
+    objetos2.darDeBaja(romina)
+
+    assert.equals(#{luisa,alicia,roque}, objetos2.estudiantesInscriptos())
+    assert.equals([], objetos2.estudiantesEnListaDeEspera())
+    assert.notThat(romina.estaInscripto(objetos2))
+    assert.that(roque.estaInscripto(objetos2))
+  }
+}
